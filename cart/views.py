@@ -32,21 +32,36 @@ def purchase(request):
     movie_ids = list(cart.keys())
     if (movie_ids == []):
         return redirect('cart.index')
+
     movies_in_cart = Movie.objects.filter(id__in=movie_ids)
     cart_total = calculate_cart_total(cart, movies_in_cart)
+
     order = Order()
     order.user = request.user
     order.total = cart_total
     order.save()
+
     for movie in movies_in_cart:
+        quantity = int(cart[str(movie.id)])
+
+        # 🔽 NEW: enforce stock
+        if movie.amount_left is not None:
+            if movie.amount_left >= quantity:
+                movie.amount_left -= quantity
+                movie.save()
+            else:
+                # Not enough stock: cancel purchase
+                messages.error(request, f"{movie.name} is sold out or has insufficient stock.")
+                order.delete()  # rollback
+                return redirect('cart.index')
+
         item = Item()
         item.movie = movie
         item.price = movie.price
         item.order = order
-        item.quantity = cart[str(movie.id)]
+        item.quantity = quantity
         item.save()
+
     request.session['cart'] = {}
-    template_data = {}
-    template_data['title'] = 'Purchase confirmation'
-    template_data['order_id'] = order.id
+    template_data = {'title': 'Purchase confirmation', 'order_id': order.id}
     return render(request, 'cart/purchase.html', {'template_data': template_data})

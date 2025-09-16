@@ -1,12 +1,13 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Movie, Review
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 def index(request):
     search_term = request.GET.get('search')
     if search_term:
-        movies = Movie.objects.filter(name__icontains=search_term)
+        movies = Movie.objects.available().filter(name__icontains=search_term)
     else:
-        movies = Movie.objects.all()
+        movies = Movie.objects.available()
     template_data = {}
     template_data['title'] = 'Movies'
     template_data['movies'] = movies
@@ -57,3 +58,20 @@ def delete_review(request, id, review_id):
         user=request.user)
     review.delete()
     return redirect('movies.show', id=id)
+@login_required
+def purchase_movie(request, id):
+    movie = get_object_or_404(Movie, id=id)
+
+    if movie.amount_left is not None:  # limited copies
+        if movie.amount_left > 0:
+            movie.amount_left -= 1
+            movie.save()
+            messages.success(request, f"You purchased {movie.name}.")
+        else:
+            messages.error(request, f"{movie.name} is sold out.")
+            return redirect('movies.index')
+    else:
+        # unlimited copies
+        messages.success(request, f"You purchased {movie.name}.")
+
+    return redirect('movies.index')
