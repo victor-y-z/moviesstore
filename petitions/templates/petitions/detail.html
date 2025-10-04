@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card bg-dark text-white">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h2 class="mb-0">{{ petition.title }}</h2>
+                        <a href="{% url 'petitions:list' %}" class="btn btn-outline-light btn-sm">
+                            <i class="fas fa-arrow-left"></i> Back to Petitions
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <div class="mb-4">
+                        <h4 class="text-primary">{{ petition.movie_title }}</h4>
+                        <p class="text-muted">
+                            <i class="fas fa-user"></i> Created by {{ petition.created_by.username }} • 
+                            <i class="fas fa-calendar"></i> {{ petition.created_at|date:"F d, Y" }}
+                        </p>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>Description:</h5>
+                        <p class="lead">{{ petition.description }}</p>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card bg-success text-white text-center">
+                                <div class="card-body">
+                                    <h3 class="card-title">{{ petition.yes_votes_count }}</h3>
+                                    <p class="card-text">
+                                        <i class="fas fa-thumbs-up"></i> Yes Votes
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-danger text-white text-center">
+                                <div class="card-body">
+                                    <h3 class="card-title">{{ petition.no_votes_count }}</h3>
+                                    <p class="card-text">
+                                        <i class="fas fa-thumbs-down"></i> No Votes
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-info text-white text-center">
+                                <div class="card-body">
+                                    <h3 class="card-title">{{ petition.total_votes_count }}</h3>
+                                    <p class="card-text">
+                                        <i class="fas fa-users"></i> Total Votes
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if user.is_authenticated %}
+                        <div class="voting-section">
+                            <h5>Cast Your Vote:</h5>
+                            {% if user_vote %}
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle"></i> 
+                                    You have voted <strong>{{ user_vote.vote_type|title }}</strong> on this petition.
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <form method="post" action="{% url 'petitions:vote' petition.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="vote_type" value="yes">
+                                        <button type="submit" class="btn btn-success {% if user_vote.vote_type == 'yes' %}active{% endif %}">
+                                            <i class="fas fa-thumbs-up"></i> Yes
+                                        </button>
+                                    </form>
+                                    <form method="post" action="{% url 'petitions:vote' petition.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="vote_type" value="no">
+                                        <button type="submit" class="btn btn-danger {% if user_vote.vote_type == 'no' %}active{% endif %}">
+                                            <i class="fas fa-thumbs-down"></i> No
+                                        </button>
+                                    </form>
+                                    <form method="post" action="{% url 'petitions:delete_vote' petition.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-outline-warning">
+                                            <i class="fas fa-times"></i> Remove Vote
+                                        </button>
+                                    </form>
+                                </div>
+                            {% else %}
+                                <div class="d-flex gap-2">
+                                    <form method="post" action="{% url 'petitions:vote' petition.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="vote_type" value="yes">
+                                        <button type="submit" class="btn btn-success">
+                                            <i class="fas fa-thumbs-up"></i> Yes
+                                        </button>
+                                    </form>
+                                    <form method="post" action="{% url 'petitions:vote' petition.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="vote_type" value="no">
+                                        <button type="submit" class="btn btn-danger">
+                                            <i class="fas fa-thumbs-down"></i> No
+                                        </button>
+                                    </form>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            Please <a href="{% url 'accounts.login' %}" class="alert-link">log in</a> to vote on this petition.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
